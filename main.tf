@@ -1,11 +1,65 @@
 # Creates a Virtual Machine
+
+
+data "azurerm_client_config" "current" {}
+
+resource "random_password" "password" {
+  length           = 16
+  special          = true
+  override_special = "_%@"
+}
+resource "azurerm_key_vault" "key_vault" {
+  name                       = var.name
+  location                   = var.location
+  resource_group_name        = var.resource_group_name
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  sku_name                   = "standard"
+  soft_delete_retention_days = 7
+
+  access_policy {
+    tenant_id = data.azurerm_client_config.current.tenant_id
+    object_id = data.azurerm_client_config.current.object_id
+
+    key_permissions = [
+      "Backup",
+      "Create",
+      "Decrypt",
+      "Delete",
+      "Encrypt",
+      "Get",
+      "Import",
+      "List",
+      "Purge",
+      "Recover",
+      "Restore",
+      "Sign",
+      "UnwrapKey",
+      "Update",
+      "Verify",
+      "WrapKey"
+    ]
+    secret_permissions = [
+      "Backup",
+      "Delete",
+      "Get",
+      "List",
+      "Purge",
+      "Restore",
+      "Recover",
+      "Set",
+      "List",
+    ]
+  }
+}
+
+
 resource "azurerm_windows_virtual_machine" "example" {
   name                  = var.name
   resource_group_name   = var.resource_group_name
   location              = var.location
   size                  = var.size
   admin_username        = var.admin_username
-  admin_password        = var.admin_password
+  admin_password        = random_password.password.result
   network_interface_ids = [azurerm_network_interface.network_interface.id]
   license_type          = var.license_type
 
